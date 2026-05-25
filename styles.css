@@ -1,0 +1,409 @@
+/* =============================================================================
+   AI Job Application System - Professional Dark Theme
+   Navy base with radial blue ripple circles background
+   ============================================================================= */
+
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #2563eb;
+    --background-color: #0b1628;
+    --card-background: rgba(15, 30, 60, 0.75);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #1e3a6e;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --hover-bg: #162444;
+}
+
+/* Full page ripple background */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+    background-color: #0b1628 !important;
+    background-image:
+        /* Outermost faint ring */
+        radial-gradient(ellipse 160% 140% at 85% 50%, transparent 52%, rgba(30, 80, 180, 0.18) 53%, transparent 60%),
+        /* Second ring */
+        radial-gradient(ellipse 120% 110% at 85% 50%, transparent 42%, rgba(40, 100, 210, 0.22) 43%, transparent 52%),
+        /* Third ring */
+        radial-gradient(ellipse 85% 80% at 85% 50%, transparent 32%, rgba(55, 120, 230, 0.28) 33%, transparent 42%),
+        /* Inner ring */
+        radial-gradient(ellipse 55% 55% at 85% 50%, transparent 20%, rgba(70, 140, 245, 0.32) 21%, transparent 32%),
+        /* Core bright glow */
+        radial-gradient(ellipse 30% 30% at 85% 50%, rgba(80, 155, 255, 0.45) 0%, rgba(45, 100, 220, 0.35) 40%, transparent 70%),
+        /* Base left-side deep navy gradient */
+        linear-gradient(125deg, #071020 0%, #0d1e40 40%, #0f2250 70%, #1a3a7a 100%) !important;
+    background-attachment: fixed !important;
+    background-size: cover !important;
+}
+
+/* Main container */
+.main {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background-color: rgba(7, 16, 35, 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    border-right: 1px solid rgba(30, 80, 180, 0.35) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--text-primary) !important;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+h1 {
+    font-size: 2.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Buttons - 3D Blue Style */
+.stButton>button {
+    width: 100%;
+    background: linear-gradient(180deg, #4e9eff 0%, #2563eb 50%, #1a4fc4 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(100, 170, 255, 0.45) !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.15s ease !important;
+    box-shadow:
+        0 6px 18px rgba(37, 99, 235, 0.45),
+        0 2px 5px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.2) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 0.02em !important;
+}
+
+.stButton>button:hover {
+    background: linear-gradient(180deg, #60aaff 0%, #3070f0 50%, #2255d0 100%) !important;
+    box-shadow:
+        0 8px 24px rgba(37, 99, 235, 0.6),
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px) !important;
+}
+
+.stButton>button:active {
+    background: linear-gradient(180deg, #1a4fc4 0%, #2563eb 100%) !important;
+    box-shadow:
+        0 2px 6px rgba(37, 99, 235, 0.4),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+    transform: translateY(1px) !important;
+}
+
+/* Input fields */
+.stTextInput>div>div>input,
+.stTextArea>div>div>textarea,
+.stSelectbox>div>div>select {
+    background-color: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+    color: var(--text-primary) !important;
+    padding: 0.5rem !important;
+}
+
+.stTextInput>div>div>input:focus,
+.stTextArea>div>div>textarea:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    outline: none !important;
+}
+
+/* Input labels */
+.stTextInput label, .stTextArea label, .stSelectbox label {
+    color: var(--text-secondary) !important;
+}
+
+/* ── Eye (password toggle) icon – make it visible ── */
+/* covers the SVG icon itself */
+.stTextInput button svg,
+[data-testid="stTextInput"] button svg,
+[data-baseweb="input"] button svg {
+    fill: #93b8f0 !important;
+    color: #93b8f0 !important;
+    stroke: #93b8f0 !important;
+}
+
+/* the button wrapper around the eye */
+.stTextInput button,
+[data-testid="stTextInput"] button,
+[data-baseweb="input"] button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    color: #93b8f0 !important;
+    opacity: 1 !important;
+    padding: 0 0.4rem !important;
+    transition: color 0.15s ease !important;
+}
+
+.stTextInput button:hover svg,
+[data-testid="stTextInput"] button:hover svg {
+    fill: #d0e8ff !important;
+    color: #d0e8ff !important;
+}
+
+/* ── Sidebar buttons – full 3D blue effect ── */
+[data-testid="stSidebar"] .stButton>button {
+    background: linear-gradient(180deg,
+        #4e9eff 0%,
+        #2563eb 50%,
+        #1a4fc4 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(100, 170, 255, 0.45) !important;
+    border-radius: 0.5rem !important;
+    box-shadow:
+        0 5px 16px rgba(37, 99, 235, 0.5),
+        0 2px 5px rgba(0, 0, 0, 0.4),
+        inset 0  2px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.22) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+    letter-spacing: 0.02em !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-testid="stSidebar"] .stButton>button:hover {
+    background: linear-gradient(180deg,
+        #62b2ff 0%,
+        #3070f0 50%,
+        #2255d0 100%) !important;
+    box-shadow:
+        0 8px 22px rgba(37, 99, 235, 0.65),
+        0 3px 8px  rgba(0, 0, 0, 0.3),
+        inset 0  2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px) !important;
+}
+
+[data-testid="stSidebar"] .stButton>button:active {
+    background: linear-gradient(180deg,
+        #1a4fc4 0%, #2563eb 100%) !important;
+    box-shadow:
+        0 2px 6px rgba(37, 99, 235, 0.4),
+        inset 0 2px 4px rgba(0, 0, 0, 0.28) !important;
+    transform: translateY(1px) !important;
+}
+
+/* Cards and containers */
+.info-box {
+    padding: 1.5rem;
+    background-color: rgba(15, 30, 65, 0.70);
+    backdrop-filter: blur(10px);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    margin: 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Expanders */
+.streamlit-expanderHeader {
+    background-color: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+.streamlit-expanderHeader:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* ── Tab bar container – 3D raised dark-navy pill ── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.3rem;
+    background: linear-gradient(180deg,
+        rgba(20, 42, 90, 0.72) 0%,
+        rgba(9, 20, 52, 0.88) 60%,
+        rgba(5, 12, 35, 0.95) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 0.7rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    box-shadow:
+        /* outer depth */
+        0 10px 30px rgba(0, 0, 0, 0.55),
+        0 4px 8px  rgba(0, 0, 0, 0.45),
+        /* top-edge highlight = 3-D "lid" */
+        inset 0  1px 0 rgba(255, 255, 255, 0.10),
+        /* bottom inner shadow = 3-D "floor" */
+        inset 0 -2px 0 rgba(0,   0,   0,   0.35),
+        /* subtle blue inner glow */
+        inset 0  0  18px rgba(37, 99, 235, 0.08);
+}
+
+/* ── Inactive tabs – fully transparent with just a faint border ── */
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important;
+    border-radius: 0.45rem;
+    color: #93b8f0 !important;
+    font-weight: 500;
+    font-size: 0.88rem;
+    padding: 0.48rem 1.1rem;
+    border: 1px solid transparent;
+    box-shadow: none;
+    /* smooth ALL properties for the pop effect */
+    transition:
+        color       0.18s ease,
+        transform   0.18s ease,
+        font-size   0.18s ease,
+        text-shadow 0.18s ease,
+        background  0.18s ease,
+        border-color 0.18s ease !important;
+    text-shadow: none;
+    transform-origin: center bottom;
+}
+
+/* ── Hover: text pops up (scale + lift + glow) ── */
+.stTabs [data-baseweb="tab"]:hover {
+    background: rgba(37, 99, 235, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.30) !important;
+    color: #d0e8ff !important;
+    /* scale text bigger = "pop up" effect */
+    transform: translateY(-2px) scale(1.10) !important;
+    text-shadow:
+        0 0  8px rgba(100, 180, 255, 0.70),
+        0 1px 3px rgba(0, 0, 0, 0.40) !important;
+    box-shadow:
+        0 4px 14px rgba(37, 99, 235, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Active tab – 3D bright blue raised button ── */
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(180deg,
+        #5aaaff 0%,
+        #2563eb 45%,
+        #1745bb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 650 !important;
+    font-size: 0.91rem !important;
+    border: 1px solid rgba(120, 185, 255, 0.55) !important;
+    box-shadow:
+        /* downward glow */
+        0  8px 22px rgba(37, 99, 235, 0.60),
+        0  3px  8px rgba(37, 99, 235, 0.40),
+        /* top highlight = 3-D raised edge */
+        inset 0  2px 0 rgba(255, 255, 255, 0.32),
+        /* bottom shadow = pressed-down depth */
+        inset 0 -3px 0 rgba(0, 0, 0, 0.25) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Success/Warning/Error messages */
+.stSuccess {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #6ee7b7 !important;
+    border-left: 4px solid var(--success-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+.stWarning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-left: 4px solid var(--warning-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+.stError {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #fca5a5 !important;
+    border-left: 4px solid var(--error-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+.stInfo {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    color: #93c5fd !important;
+    border-left: 4px solid var(--primary-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Dataframes */
+.stDataFrame {
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+    background-color: var(--card-background) !important;
+}
+
+/* Metrics */
+[data-testid="stMetricValue"] {
+    color: var(--primary-color) !important;
+    font-size: 2rem !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--text-secondary) !important;
+}
+
+/* File uploader */
+.uploadedFile {
+    background-color: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+[data-testid="stFileUploader"] {
+    background-color: var(--card-background) !important;
+    border: 1px dashed var(--border-color) !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Progress bar */
+.stProgress > div > div {
+    background-color: var(--primary-color) !important;
+}
+
+/* Divider */
+hr {
+    border-color: var(--border-color) !important;
+    opacity: 0.3 !important;
+}
+
+/* Remove default Streamlit branding colors */
+header[data-testid="stHeader"] {
+    background-color: rgba(7, 16, 35, 0.85) !important;
+    backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid rgba(30, 80, 180, 0.3) !important;
+}
+
+/* Markdown text */
+.stMarkdown {
+    color: var(--text-primary) !important;
+}
+
+/* Caption text */
+.caption {
+    color: var(--text-secondary) !important;
+}
+
+/* Code blocks */
+code {
+    background-color: var(--card-background) !important;
+    color: #93c5fd !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.25rem !important;
+    padding: 0.2rem 0.4rem !important;
+}
+
+/* Placeholder text */
+::placeholder {
+    color: var(--text-secondary) !important;
+    opacity: 0.6 !important;
+}
