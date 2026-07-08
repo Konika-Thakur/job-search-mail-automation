@@ -32,6 +32,7 @@ from typing import IO
 from .._utils import (
     WHITESPACES,
     WHITESPACES_AS_BYTES,
+    BinaryStreamType,
     StreamType,
     logger_warning,
     read_non_whitespace,
@@ -57,12 +58,12 @@ def extract_inline__ascii_hex_decode(stream: StreamType) -> bytes:
     Extract HexEncoded stream from inline image.
     The stream will be moved onto the EI.
     """
-    data_out: bytes = b""
+    data_out = bytearray()
     # Read data until delimiter > and EI as backup.
     while True:
-        data_buffered = read_non_whitespace(stream) + stream.read(BUFFER_SIZE)
-        if not data_buffered:
-            raise PdfReadError("Unexpected end of stream")
+        data_buffered = read_non_whitespace(stream) + (read_bytes := stream.read(BUFFER_SIZE))
+        if not data_buffered or not read_bytes:
+            raise PdfReadError("Unexpected end of stream.")
         pos_tok = data_buffered.find(b">")
         if pos_tok >= 0:  # found >
             data_out += data_buffered[: pos_tok + 1]
@@ -80,14 +81,14 @@ def extract_inline__ascii_hex_decode(stream: StreamType) -> bytes:
             break
         if len(data_buffered) == 2:
             data_out += data_buffered
-            raise PdfReadError("Unexpected end of stream")
+            raise PdfReadError("Unexpected end of stream.")
         # Neither > nor EI found
         data_out += data_buffered[:-2]
         stream.seek(-2, 1)
 
     if not _check_end_image_marker(stream):
-        raise PdfReadError("EI stream not found")
-    return data_out
+        raise PdfReadError("EI stream not found.")
+    return bytes(data_out)
 
 
 def extract_inline__ascii85_decode(stream: StreamType) -> bytes:
@@ -95,12 +96,12 @@ def extract_inline__ascii85_decode(stream: StreamType) -> bytes:
     Extract A85 stream from inline image.
     The stream will be moved onto the EI.
     """
-    data_out: bytes = b""
+    data_out = bytearray()
     # Read data until delimiter ~>
     while True:
-        data_buffered = read_non_whitespace(stream) + stream.read(BUFFER_SIZE)
-        if not data_buffered:
-            raise PdfReadError("Unexpected end of stream")
+        data_buffered = read_non_whitespace(stream) + (read_bytes := stream.read(BUFFER_SIZE))
+        if not data_buffered or not read_bytes:
+            raise PdfReadError("Unexpected end of stream.")
         pos_tok = data_buffered.find(b"~>")
         if pos_tok >= 0:  # found!
             data_out += data_buffered[: pos_tok + 2]
@@ -108,15 +109,15 @@ def extract_inline__ascii85_decode(stream: StreamType) -> bytes:
             break
         if len(data_buffered) == 2:  # end of buffer
             data_out += data_buffered
-            raise PdfReadError("Unexpected end of stream")
+            raise PdfReadError("Unexpected end of stream.")
         data_out += data_buffered[
             :-2
         ]  # back by one char in case of in the middle of ~>
         stream.seek(-2, 1)
 
     if not _check_end_image_marker(stream):
-        raise PdfReadError("EI stream not found")
-    return data_out
+        raise PdfReadError("EI stream not found.")
+    return bytes(data_out)
 
 
 def extract_inline__run_length_decode(stream: StreamType) -> bytes:
@@ -124,12 +125,12 @@ def extract_inline__run_length_decode(stream: StreamType) -> bytes:
     Extract RL (RunLengthDecode) stream from inline image.
     The stream will be moved onto the EI.
     """
-    data_out: bytes = b""
+    data_out = bytearray()
     # Read data until delimiter 128
     while True:
         data_buffered = stream.read(BUFFER_SIZE)
         if not data_buffered:
-            raise PdfReadError("Unexpected end of stream")
+            raise PdfReadError("Unexpected end of stream.")
         pos_tok = data_buffered.find(b"\x80")
         if pos_tok >= 0:  # found
             # Ideally, we could just use plain run-length decoding here, where 80_16 = 128_10
@@ -145,7 +146,7 @@ def extract_inline__run_length_decode(stream: StreamType) -> bytes:
                 data_out += data_buffered[: pos_tok + 1]
                 stream.seek(-len(data_buffered) + pos_tok + 1, 1)
             else:
-                logger_warning("Early EOD in RunLengthDecode of inline image, using fallback.", __name__)
+                logger_warning("Early EOD in RunLengthDecode of inline image, using fallback.", source=__name__)
                 ei_marker = data_buffered.find(b"EI")
                 if ei_marker > 0:
                     data_out += data_buffered[: ei_marker]
@@ -154,11 +155,11 @@ def extract_inline__run_length_decode(stream: StreamType) -> bytes:
         data_out += data_buffered
 
     if not _check_end_image_marker(stream):
-        raise PdfReadError("EI stream not found")
-    return data_out
+        raise PdfReadError("EI stream not found.")
+    return bytes(data_out)
 
 
-def extract_inline__dct_decode(stream: StreamType) -> bytes:
+def extract_inline__dct_decode(stream: BinaryStreamType) -> bytes:
     """
     Extract DCT (JPEG) stream from inline image.
     The stream will be moved onto the EI.
@@ -168,10 +169,10 @@ def extract_inline__dct_decode(stream: StreamType) -> bytes:
         # If the object is in non-blocking mode and no bytes are available, `None` is returned.
         _result = stream.read(length)
         if _result is None or len(_result) != length:
-            raise PdfReadError("Unexpected end of stream")
+            raise PdfReadError("Unexpected end of stream.")
         return _result
 
-    data_out: bytes = b""
+    data_out = bytearray()
     # Read Blocks of data (ID/Size/data) up to ID=FF/D9
     # https://www.digicamsoft.com/itu/itu-t81-36.html
     not_first = False
@@ -201,8 +202,8 @@ def extract_inline__dct_decode(stream: StreamType) -> bytes:
             data_out += read(sz - 2)
 
     if not _check_end_image_marker(stream):
-        raise PdfReadError("EI stream not found")
-    return data_out
+        raise PdfReadError("EI stream not found.")
+    return bytes(data_out)
 
 
 def extract_inline_default(stream: StreamType) -> bytes:
@@ -212,7 +213,7 @@ def extract_inline_default(stream: StreamType) -> bytes:
     while True:
         data_buffered = stream.read(BUFFER_SIZE)
         if not data_buffered:
-            raise PdfReadError("Unexpected end of stream")
+            raise PdfReadError("Unexpected end of stream.")
         pos_ei = data_buffered.find(
             b"E"
         )  # We can not look straight for "EI" because it may not have been loaded in the buffer
@@ -232,6 +233,13 @@ def extract_inline_default(stream: StreamType) -> bytes:
                 stream.seek(saved_pos, 0)
                 continue
             tok3 = stream.read(1)  # possible space after "EI"
+            if tok3 == b"":
+                # The `EI` marker is at the very end of the stream. There can be
+                # no trailing binary data, so this is unambiguously the end of the
+                # inline image (#3468).
+                stream.seek(saved_pos - 1, 0)
+                stream_out.truncate(sav_pos_ei)
+                break
             if tok3 not in WHITESPACES:
                 stream.seek(saved_pos, 0)
                 continue

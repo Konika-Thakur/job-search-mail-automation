@@ -29,7 +29,6 @@ import codecs
 import hashlib
 import re
 import sys
-from binascii import unhexlify
 from collections.abc import Sequence
 from math import log10
 from struct import iter_unpack
@@ -137,8 +136,8 @@ class PdfObject(PdfObjectProtocol):
         )
 
     def _reference_clone(
-        self, clone: Any, pdf_dest: PdfWriterProtocol, force_duplicate: bool = False
-    ) -> PdfObjectProtocol:
+        self, clone: "PdfObject", pdf_dest: PdfWriterProtocol, force_duplicate: bool = False
+    ) -> "PdfObject":
         """
         Reference the object within the _objects of pdf_dest only if
         indirect_reference attribute exists (which means the objects was
@@ -154,7 +153,11 @@ class PdfObject(PdfObjectProtocol):
 
         """
         try:
-            if not force_duplicate and clone.indirect_reference.pdf == pdf_dest:
+            if (
+                not force_duplicate
+                and clone.indirect_reference is not None
+                and clone.indirect_reference.pdf == pdf_dest
+            ):
                 return clone
         except Exception:
             pass
@@ -183,7 +186,7 @@ class PdfObject(PdfObjectProtocol):
                 obj = pdf_dest.get_object(
                     pdf_dest._id_translated[id(ind.pdf)][ind.idnum]
                 )
-                assert obj is not None
+                assert isinstance(obj, PdfObject), "mypy"
                 return obj
             pdf_dest._id_translated[id(ind.pdf)][ind.idnum] = i
         try:
@@ -253,6 +256,8 @@ class NullObject(PdfObject):
 
 
 class BooleanObject(PdfObject):
+    value: bool
+
     def __init__(self, value: Any) -> None:
         self.value = value
 
@@ -371,7 +376,7 @@ class IndirectObject(PdfObject):
             dup = pdf_dest._add_object(
                 obj.clone(pdf_dest, force_duplicate, ignore_fields)
             )
-        assert dup is not None, "mypy"
+        assert isinstance(dup, PdfObject), "mypy"
         assert dup.indirect_reference is not None, "mypy"
         return dup.indirect_reference
 
@@ -380,7 +385,8 @@ class IndirectObject(PdfObject):
         return self
 
     def get_object(self) -> Optional["PdfObject"]:
-        return self.pdf.get_object(self)
+        obj: Optional[PdfObject] = self.pdf.get_object(self)
+        return obj
 
     def __deepcopy__(self, memo: Any) -> "IndirectObject":
         return IndirectObject(self.idnum, self.generation, self.pdf)
@@ -405,21 +411,21 @@ class IndirectObject(PdfObject):
 
     def __getitem__(self, key: Any) -> Any:
         # items should be extracted from pointed Object
-        return self._get_object_with_check()[key]  # type: ignore
+        return self._get_object_with_check()[key]  # type: ignore[index]
 
     def __contains__(self, key: Any) -> bool:
-        return key in self._get_object_with_check()  # type: ignore
+        return key in self._get_object_with_check()  # type: ignore[operator]
 
     def __iter__(self) -> Any:
-        return self._get_object_with_check().__iter__()  # type: ignore
+        return self._get_object_with_check().__iter__()  # type: ignore[union-attr]
 
     def __float__(self) -> str:
         # in this case we are looking for the pointed data
-        return self.get_object().__float__()  # type: ignore
+        return self.get_object().__float__()  # type: ignore[union-attr, no-any-return]
 
     def __int__(self) -> int:
         # in this case we are looking for the pointed data
-        return self.get_object().__int__()  # type: ignore
+        return self.get_object().__int__()  # type: ignore[union-attr, no-any-return]
 
     def __str__(self) -> str:
         # in this case we are looking for the pointed data
@@ -491,7 +497,10 @@ class FloatObject(float, PdfObject):
             # If this isn't a valid decimal (happens in malformed PDFs)
             # fallback to 0
             logger_warning(
-                f"{e} : FloatObject ({value}) invalid; use 0.0 instead", __name__
+                "%(error)s : FloatObject (%(value)s) invalid; use 0.0 instead",
+                source=__name__,
+                error=e,
+                value=value,
             )
             return float.__new__(cls, 0.0)
 
@@ -518,7 +527,7 @@ class FloatObject(float, PdfObject):
         return hash((self.__class__, self.as_numeric))
 
     def myrepr(self) -> str:
-        if self == 0:
+        if self == 0:  # type: ignore[comparison-overlap]
             return "0.0"
         nb = FLOAT_WRITE_PRECISION - int(log10(abs(self)))
         return f"{self:.{max(1, nb)}f}".rstrip("0").rstrip(".")
@@ -541,12 +550,13 @@ class FloatObject(float, PdfObject):
 
 class NumberObject(int, PdfObject):
     NumberPattern = re.compile(b"[^+-.0-9]")
+    _LENGTH_LIMIT = 64
 
     def __new__(cls, value: Any) -> Self:
         try:
             return int.__new__(cls, int(value))
         except ValueError:
-            logger_warning(f"NumberObject({value}) invalid; use 0 instead", __name__)
+            logger_warning("NumberObject(%(value)s) invalid; use 0 instead", source=__name__, value=value)
             return int.__new__(cls, 0)
 
     def clone(
@@ -585,7 +595,7 @@ class NumberObject(int, PdfObject):
 
     @staticmethod
     def read_from_stream(stream: StreamType) -> Union["NumberObject", "FloatObject"]:
-        num = read_until_regex(stream, NumberObject.NumberPattern)
+        num = read_until_regex(stream=stream, regex=NumberObject.NumberPattern, length=NumberObject._LENGTH_LIMIT)
         if b"." in num:
             return FloatObject(num)
         return NumberObject(num)
@@ -683,8 +693,10 @@ class TextStringObject(str, PdfObject):  # noqa: SLOT000
                 text_string_object = str.__new__(cls, original_bytes.decode("utf-16"))
             except UnicodeDecodeError as exception:
                 logger_warning(
-                    f"{exception!s}\ninitial string:{exception.object!r}",
-                    __name__,
+                    "%(exception)s; initial string: %(initial_string)r",
+                    source=__name__,
+                    exception=exception,
+                    initial_string=exception.object,
                 )
                 text_string_object = str.__new__(cls, exception.object[: exception.start].decode("utf-16"))
             text_string_object._original_bytes = original_bytes
@@ -801,6 +813,7 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
         **{chr(i): f"#{i:02X}".encode() for i in b"#()<>[]{}/%"},
         **{chr(i): f"#{i:02X}".encode() for i in range(33)},
     }
+    _LENGTH_LIMIT = 4096
 
     def clone(
         self,
@@ -840,16 +853,16 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
                 f"Incorrect first char in NameObject, should start with '/': ({self})",
                 "5.0.0",
             )
+        parts = [out]
         for c in self[1:]:
             if c > "~":
-                for x in c.encode("utf-8"):
-                    out += f"#{x:02X}".encode()
+                parts.extend(f"#{x:02X}".encode() for x in c.encode("utf-8"))
             else:
                 try:
-                    out += self.renumber_table[c]
+                    parts.append(self.renumber_table[c])
                 except KeyError:
-                    out += c.encode("utf-8")
-        return out
+                    parts.append(c.encode("utf-8"))
+        return b"".join(parts)
 
     def _sanitize(self) -> "NameObject":
         """
@@ -862,7 +875,7 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
             NameObject with sanitized name.
         """
         name = str(self).removeprefix("/")
-        name = re.sub(r"\ ", "_", name)
+        name = re.sub(r" ", "_", name)
         name = re.sub(r"[^a-zA-Z0-9_-]", "_", name)
         return NameObject("/" + name)
 
@@ -873,16 +886,21 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
 
     @staticmethod
     def unnumber(sin: bytes) -> bytes:
-        i = sin.find(b"#", 0)
-        while i >= 0:
-            try:
-                sin = sin[:i] + unhexlify(sin[i + 1 : i + 3]) + sin[i + 3 :]
-                i = sin.find(b"#", i + 1)
-            except ValueError:
-                # if the 2 characters after # can not be converted to hex
-                # we change nothing and carry on
-                i = i + 1
-        return sin
+        result = bytearray()
+        i = 0
+        while i < len(sin):
+            if sin[i:i + 1] == b"#":
+                try:
+                    result.append(int(sin[i + 1 : i + 3], 16))
+                    i += 3
+                    continue
+                except (ValueError, IndexError):
+                    # if the 2 characters after # can not be converted to hex
+                    # we change nothing and carry on
+                    pass
+            result.append(sin[i])
+            i += 1
+        return bytes(result)
 
     CHARSETS = ("utf-8", "gbk", "latin1")
 
@@ -891,7 +909,7 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
         name = stream.read(1)
         if name != NameObject.prefix:
             raise PdfReadError("Name read error")
-        name += read_until_regex(stream, NameObject.delimiter_pattern)
+        name += read_until_regex(stream=stream, regex=NameObject.delimiter_pattern, length=NameObject._LENGTH_LIMIT)
         try:
             # Name objects should represent irregular characters
             # with a '#' followed by the symbol's hex number
@@ -906,9 +924,9 @@ class NameObject(str, PdfObject):  # noqa: SLOT000
         except (UnicodeEncodeError, UnicodeDecodeError) as e:
             if not pdf.strict:
                 logger_warning(
-                    f"Illegal character in NameObject ({name!r}), "
-                    "you may need to adjust NameObject.CHARSETS",
-                    __name__,
+                    "Illegal character in NameObject (%(name)r), you may need to adjust NameObject.CHARSETS",
+                    source=__name__,
+                    name=name,
                 )
                 return NameObject(name.decode("charmap"))
             raise PdfReadError(

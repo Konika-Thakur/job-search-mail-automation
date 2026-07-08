@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from docx.oxml.ns import nsdecls
 from docx.oxml.parser import parse_xml
@@ -34,48 +34,58 @@ class CT_Blip(BaseOxmlElement):
     """``<a:blip>`` element, specifies image source and adjustments such as alpha and
     tint."""
 
-    embed = OptionalAttribute("r:embed", ST_RelationshipId)
-    link = OptionalAttribute("r:link", ST_RelationshipId)
+    embed: str | None = OptionalAttribute(  # pyright: ignore[reportAssignmentType]
+        "r:embed", ST_RelationshipId
+    )
+    link: str | None = OptionalAttribute(  # pyright: ignore[reportAssignmentType]
+        "r:link", ST_RelationshipId
+    )
 
 
 class CT_BlipFillProperties(BaseOxmlElement):
     """``<pic:blipFill>`` element, specifies picture properties."""
 
-    blip = ZeroOrOne("a:blip", successors=("a:srcRect", "a:tile", "a:stretch"))
+    blip: CT_Blip = ZeroOrOne(  # pyright: ignore[reportAssignmentType]
+        "a:blip", successors=("a:srcRect", "a:tile", "a:stretch")
+    )
 
 
 class CT_GraphicalObject(BaseOxmlElement):
     """``<a:graphic>`` element, container for a DrawingML object."""
 
-    graphicData = OneAndOnlyOne("a:graphicData")
+    graphicData: CT_GraphicalObjectData = OneAndOnlyOne(  # pyright: ignore[reportAssignmentType]
+        "a:graphicData"
+    )
 
 
 class CT_GraphicalObjectData(BaseOxmlElement):
     """``<a:graphicData>`` element, container for the XML of a DrawingML object."""
 
-    pic = ZeroOrOne("pic:pic")
-    uri = RequiredAttribute("uri", XsdToken)
+    pic: CT_Picture = ZeroOrOne("pic:pic")  # pyright: ignore[reportAssignmentType]
+    uri: str = RequiredAttribute("uri", XsdToken)  # pyright: ignore[reportAssignmentType]
 
 
 class CT_Inline(BaseOxmlElement):
     """`<wp:inline>` element, container for an inline shape."""
 
-    extent = OneAndOnlyOne("wp:extent")
-    docPr = OneAndOnlyOne("wp:docPr")
-    graphic = OneAndOnlyOne("a:graphic")
+    extent: CT_PositiveSize2D = OneAndOnlyOne("wp:extent")  # pyright: ignore[reportAssignmentType]
+    docPr: CT_NonVisualDrawingProps = OneAndOnlyOne(  # pyright: ignore[reportAssignmentType]
+        "wp:docPr"
+    )
+    graphic: CT_GraphicalObject = OneAndOnlyOne(  # pyright: ignore[reportAssignmentType]
+        "a:graphic"
+    )
 
     @classmethod
     def new(cls, cx: Length, cy: Length, shape_id: int, pic: CT_Picture) -> CT_Inline:
         """Return a new ``<wp:inline>`` element populated with the values passed as
         parameters."""
-        inline = parse_xml(cls._inline_xml())
+        inline = cast(CT_Inline, parse_xml(cls._inline_xml()))
         inline.extent.cx = cx
         inline.extent.cy = cy
         inline.docPr.id = shape_id
         inline.docPr.name = "Picture %d" % shape_id
-        inline.graphic.graphicData.uri = (
-            "http://schemas.openxmlformats.org/drawingml/2006/picture"
-        )
+        inline.graphic.graphicData.uri = "http://schemas.openxmlformats.org/drawingml/2006/picture"
         inline.graphic.graphicData._insert_pic(pic)
         return inline
 
@@ -90,7 +100,6 @@ class CT_Inline(BaseOxmlElement):
         pic_id = 0  # Word doesn't seem to use this, but does not omit it
         pic = CT_Picture.new(pic_id, filename, rId, cx, cy)
         inline = cls.new(cx, cy, shape_id, pic)
-        inline.graphic.graphicData._insert_pic(pic)
         return inline
 
     @classmethod
@@ -126,15 +135,17 @@ class CT_NonVisualPictureProperties(BaseOxmlElement):
 class CT_Picture(BaseOxmlElement):
     """``<pic:pic>`` element, a DrawingML picture."""
 
-    nvPicPr = OneAndOnlyOne("pic:nvPicPr")
-    blipFill = OneAndOnlyOne("pic:blipFill")
-    spPr = OneAndOnlyOne("pic:spPr")
+    nvPicPr: CT_PictureNonVisual = OneAndOnlyOne(  # pyright: ignore[reportAssignmentType]
+        "pic:nvPicPr"
+    )
+    blipFill: CT_BlipFillProperties = OneAndOnlyOne(  # pyright: ignore[reportAssignmentType]
+        "pic:blipFill"
+    )
+    spPr: CT_ShapeProperties = OneAndOnlyOne("pic:spPr")  # pyright: ignore[reportAssignmentType]
 
     @classmethod
-    def new(cls, pic_id, filename, rId, cx, cy):
-        """Return a new ``<pic:pic>`` element populated with the minimal contents
-        required to define a viable picture element, based on the values passed as
-        parameters."""
+    def new(cls, pic_id: int, filename: str, rId: str, cx: Length, cy: Length) -> CT_Picture:
+        """A new minimum viable `<pic:pic>` (picture) element."""
         pic = parse_xml(cls._pic_xml())
         pic.nvPicPr.cNvPr.id = pic_id
         pic.nvPicPr.cNvPr.name = filename
@@ -190,8 +201,12 @@ class CT_PositiveSize2D(BaseOxmlElement):
     Specifies the size of a DrawingML drawing.
     """
 
-    cx = RequiredAttribute("cx", ST_PositiveCoordinate)
-    cy = RequiredAttribute("cy", ST_PositiveCoordinate)
+    cx: Length = RequiredAttribute(  # pyright: ignore[reportAssignmentType]
+        "cx", ST_PositiveCoordinate
+    )
+    cy: Length = RequiredAttribute(  # pyright: ignore[reportAssignmentType]
+        "cy", ST_PositiveCoordinate
+    )
 
 
 class CT_PresetGeometry2D(BaseOxmlElement):
